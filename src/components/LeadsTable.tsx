@@ -1,4 +1,4 @@
-import { Copy, Check, MapPin, Instagram } from "lucide-react";
+import { Copy, Check, MapPin, Star } from "lucide-react";
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
 import type { Lead } from "@/lib/airleads.functions";
@@ -12,11 +12,10 @@ type Props = {
 
 const COLS = [
   { key: "businessName", label: "Business" },
-  { key: "ownerName", label: "Owner" },
-  { key: "category", label: "Category" },
   { key: "phone", label: "Phone" },
+  { key: "address", label: "Address" },
+  { key: "category", label: "Category" },
   { key: "email", label: "Email" },
-  { key: "website", label: "Website" },
   { key: "city", label: "City" },
 ] as const;
 
@@ -43,7 +42,8 @@ export function LeadsTable({ leads, statuses, onStatusChange }: Props) {
                   {c.label}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Links</th>
+              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Rating</th>
+              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Maps</th>
               <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Status</th>
             </tr>
           </thead>
@@ -54,17 +54,17 @@ export function LeadsTable({ leads, statuses, onStatusChange }: Props) {
                 <tr key={lead.id} className="border-t border-border align-top">
                   <td className="px-3 py-3 text-muted-foreground">{i + 1}</td>
                   {COLS.map((c) => {
-                    const value = lead[c.key] || "—";
+                    const cell = lead[c.key] ?? "";
                     const cellId = `${lead.id}-${c.key}`;
                     return (
                       <td key={c.key} className="max-w-[190px] px-3 py-3">
                         <button
                           type="button"
-                          onClick={() => copy(lead[c.key], cellId)}
+                          onClick={() => copy(cell, cellId)}
                           className="press flex max-w-full items-center gap-1.5 text-left font-medium"
                         >
-                          <span className="truncate">{value}</span>
-                          {lead[c.key] &&
+                          <span className="truncate">{cell || "—"}</span>
+                          {cell &&
                             (copied === cellId ? (
                               <Check className="size-3 shrink-0 text-primary" />
                             ) : (
@@ -74,34 +74,33 @@ export function LeadsTable({ leads, statuses, onStatusChange }: Props) {
                       </td>
                     );
                   })}
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {lead.rating !== null ? (
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Star className="size-3 fill-current text-accent" />
+                        {lead.rating}
+                        {lead.reviewsCount !== null && (
+                          <span className="text-muted-foreground">({lead.reviewsCount})</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      {lead.mapsLink && (
-                        <a
-                          href={lead.mapsLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Open ${lead.businessName} on Maps`}
-                          className="press grid size-7 place-items-center rounded-lg bg-primary/12 text-primary"
-                        >
-                          <MapPin className="size-3.5" />
-                        </a>
-                      )}
-                      {lead.instagramLink && (
-                        <a
-                          href={lead.instagramLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`Open ${lead.businessName} on Instagram`}
-                          className="press grid size-7 place-items-center rounded-lg bg-primary/12 text-primary"
-                        >
-                          <Instagram className="size-3.5" />
-                        </a>
-                      )}
-                      {!lead.mapsLink && !lead.instagramLink && (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </div>
+                    {lead.googleMapsUrl ? (
+                      <a
+                        href={lead.googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Open ${lead.businessName} in Google Maps`}
+                        className="press grid size-7 place-items-center rounded-lg bg-primary/12 text-primary"
+                      >
+                        <MapPin className="size-3.5" />
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <button
