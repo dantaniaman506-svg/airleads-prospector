@@ -1,5 +1,16 @@
 import { useRef, useState } from "react";
-import { Building2, Globe, Mail, Phone, User, Bookmark, BookmarkCheck, MapPin, Instagram, Lightbulb } from "lucide-react";
+import {
+  Building2,
+  Globe,
+  Mail,
+  Phone,
+  Bookmark,
+  BookmarkCheck,
+  MapPin,
+  Star,
+  Ban,
+  ExternalLink,
+} from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import type { Lead } from "@/lib/airleads.functions";
 
@@ -28,12 +39,16 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
   };
 
   const rows = [
-    { Icon: User, value: lead.ownerName || "Not publicly available", label: "Owner" },
     {
       Icon: Phone,
       value: lead.phone || "Not available",
       label: "Phone",
       href: lead.phone ? `tel:${lead.phone}` : undefined,
+    },
+    {
+      Icon: MapPin,
+      value: lead.address || [lead.city, lead.country].filter(Boolean).join(", ") || "Not available",
+      label: "Address",
     },
     {
       Icon: Mail,
@@ -65,10 +80,13 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
           onContextMenu={(e) => e.preventDefault()}
           className="press select-none text-left"
         >
-          <h3 className="text-[17px] font-bold leading-tight">{lead.businessName || "Unnamed business"}</h3>
+          <h3 className="text-[17px] font-bold leading-tight">
+            {lead.businessName || "Unnamed business"}
+          </h3>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Building2 className="size-3.5" />
-            {[lead.category, lead.city || lead.country].filter(Boolean).join(" · ") || "Business lead"}
+            {[lead.category, lead.city || lead.country].filter(Boolean).join(" · ") ||
+              "Business lead"}
           </p>
         </button>
         <button
@@ -82,6 +100,23 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
         >
           {saved ? <BookmarkCheck className="size-5 text-primary" /> : <Bookmark className="size-5" />}
         </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 pl-2">
+        {lead.rating !== null && (
+          <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2.5 py-1 text-[11px] font-bold text-accent-foreground">
+            <Star className="size-3.5 fill-current" />
+            {lead.rating}
+            {lead.reviewsCount !== null && (
+              <span className="font-semibold opacity-70">({lead.reviewsCount})</span>
+            )}
+          </span>
+        )}
+        {!lead.hasWebsite && (
+          <span className="flex items-center gap-1 rounded-full bg-primary/12 px-2.5 py-1 text-[11px] font-bold text-primary">
+            <Ban className="size-3.5" /> No website
+          </span>
+        )}
       </div>
 
       <div className="mt-3 space-y-2 pl-2">
@@ -99,46 +134,22 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
         ))}
       </div>
 
-      {lead.gap && (
-        <div className="mt-3 ml-2 rounded-xl border border-primary/25 bg-primary/8 px-3 py-2.5">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-            <Lightbulb className="size-3.5" /> Why they need a website
-          </p>
-          <p className="mt-1 text-[13px] font-medium leading-snug text-foreground/90">{lead.gap}</p>
-        </div>
-      )}
-
-      {(lead.mapsLink || lead.instagramLink) && (
-        <div className="mt-3 flex gap-2 pl-2">
-          {lead.mapsLink && (
-            <a
-              href={lead.mapsLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="press flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary/70 py-2.5 text-[13px] font-bold"
-            >
-              <MapPin className="size-4 text-primary" /> Maps
-            </a>
-          )}
-          {lead.instagramLink && (
-            <a
-              href={lead.instagramLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="press flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary/70 py-2.5 text-[13px] font-bold"
-            >
-              <Instagram className="size-4 text-primary" /> Instagram
-            </a>
-          )}
-        </div>
+      {lead.googleMapsUrl && (
+        <a
+          href={lead.googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="press mt-3 ml-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13px] font-bold text-primary-foreground"
+        >
+          <MapPin className="size-4" /> Open in Maps
+          <ExternalLink className="size-3.5 opacity-80" />
+        </a>
       )}
 
       <div className="mt-3 flex items-center justify-between pl-2">
         <span
           className={`rounded-full px-3 py-1 text-[11px] font-bold ${
-            status === "closed"
-              ? "bg-destructive/12 text-destructive"
-              : "bg-info/12 text-info"
+            status === "closed" ? "bg-destructive/12 text-destructive" : "bg-info/12 text-info"
           }`}
         >
           {status === "closed" ? "Deal closed" : "Open lead"}
@@ -149,7 +160,9 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
       {menu && (
         <div className="absolute inset-0 z-10 grid place-items-center bg-background/70 backdrop-blur-md">
           <div className="card-soft w-[86%] p-3">
-            <p className="px-2 pb-2 text-xs font-semibold text-muted-foreground">Mark this business as</p>
+            <p className="px-2 pb-2 text-xs font-semibold text-muted-foreground">
+              Mark this business as
+            </p>
             <button
               type="button"
               onClick={() => {
