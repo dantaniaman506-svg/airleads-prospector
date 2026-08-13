@@ -21,6 +21,60 @@ export const COUNTRIES: Country[] = [
   { code: "MX", name: "Mexico", flag: "🇲🇽" },
 ];
 
+/** Popular states / cities per country, used for the Location picker. */
+export const LOCATIONS: Record<string, string[]> = {
+  IN: [
+    "Delhi",
+    "Mumbai",
+    "Bengaluru",
+    "Hyderabad",
+    "Chennai",
+    "Pune",
+    "Kolkata",
+    "Ahmedabad",
+    "Jaipur",
+    "Lucknow",
+    "Surat",
+    "Indore",
+    "Chandigarh",
+    "Kochi",
+    "Nagpur",
+    "Noida",
+    "Gurugram",
+    "Bhopal",
+  ],
+  US: [
+    "New York",
+    "Los Angeles",
+    "Chicago",
+    "Houston",
+    "Phoenix",
+    "Philadelphia",
+    "Dallas",
+    "Miami",
+    "Atlanta",
+    "Seattle",
+    "Boston",
+    "Denver",
+  ],
+  GB: ["London", "Manchester", "Birmingham", "Leeds", "Glasgow", "Liverpool", "Bristol", "Edinburgh"],
+  CA: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"],
+  AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
+  AE: ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah"],
+  SA: ["Riyadh", "Jeddah", "Dammam", "Mecca", "Medina"],
+  DE: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart"],
+  FR: ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Bordeaux"],
+  IT: ["Rome", "Milan", "Naples", "Turin", "Florence", "Bologna"],
+  ES: ["Madrid", "Barcelona", "Valencia", "Seville", "Malaga", "Bilbao"],
+  NL: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"],
+  SG: ["Singapore", "Jurong", "Tampines", "Woodlands"],
+  JP: ["Tokyo", "Osaka", "Kyoto", "Nagoya", "Fukuoka", "Sapporo"],
+  BR: ["São Paulo", "Rio de Janeiro", "Brasília", "Belo Horizonte", "Curitiba"],
+  ZA: ["Johannesburg", "Cape Town", "Durban", "Pretoria", "Port Elizabeth"],
+  NZ: ["Auckland", "Wellington", "Christchurch", "Hamilton", "Dunedin"],
+  MX: ["Mexico City", "Guadalajara", "Monterrey", "Puebla", "Cancún"],
+};
+
 export const BUSINESS_TYPES = [
   "Restaurant / Cafe",
   "Salon & Spa",
@@ -35,11 +89,3 @@ export const BUSINESS_TYPES = [
   "Education & Coaching",
   "Construction & Contractor",
 ];
-
-export const LEAD_FIELDS = [
-  { id: "businessName", label: "Business Name", icon: "building" },
-  { id: "ownerName", label: "Owner Name", icon: "user" },
-  { id: "phone", label: "Phone Number", icon: "phone" },
-  { id: "email", label: "Email", icon: "mail" },
-  { id: "social", label: "Social Media", icon: "share" },
-] as const;
