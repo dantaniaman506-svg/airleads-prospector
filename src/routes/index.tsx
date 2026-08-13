@@ -17,15 +17,13 @@ import {
   Vibrate,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { BottomTabs, type TabId } from "@/components/BottomTabs";
-import { GeneratePanel, type GenerateConfig } from "@/components/GeneratePanel";
+import { GeneratePanel, DEFAULT_CONFIG, type GenerateConfig } from "@/components/GeneratePanel";
 import { LeadCard, type LeadStatus } from "@/components/LeadCard";
 import { LoginScreen } from "@/components/LoginScreen";
 import { Sparkline } from "@/components/Sparkline";
 import { LeadsTable } from "@/components/LeadsTable";
 import { TechBackground } from "@/components/TechBackground";
-import { useTheme } from "@/lib/theme";
 import { generateLeads, type Lead } from "@/lib/airleads.functions";
 import { BUSINESS_TYPES } from "@/lib/countries";
 import { haptic, hapticsEnabled, setHapticsEnabled } from "@/lib/haptics";
@@ -51,17 +49,14 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-const DEFAULT_CONFIG: GenerateConfig = {
-  country: "India",
-  businessType: BUSINESS_TYPES[0]!,
-  locationMode: "random",
-  city: "",
-  leadCount: 100,
-  websiteFilter: "no-website",
-  fields: ["businessName", "ownerName", "phone", "email", "social"],
+type Run = {
+  id: string;
+  at: string;
+  count: number;
+  country: string;
+  businessType: string;
+  filter: string;
 };
-
-type Run = { id: string; at: string; count: number; country: string; businessType: string; filter: string };
 
 function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -76,7 +71,6 @@ function App() {
 }
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
-  const { theme } = useTheme();
   const run = useServerFn(generateLeads);
   const [tab, setTab] = useState<TabId>("dashboard");
   const [config, setConfig] = useState<GenerateConfig>(DEFAULT_CONFIG);
@@ -156,34 +150,64 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   }, [leads, runs, statuses]);
 
   async function handleGenerate() {
-    setLoading(true);
-    const res = await run({ data: config });
-    setLoading(false);
-    if (!res.ok) {
+    if (!config.location.trim()) {
       haptic.error();
-      toast.error(res.message || "Generation failed");
+      toast.error("Choose a state or city first", {
+        description: "The automation needs a location to search in.",
+      });
       return;
     }
-    haptic.success();
-    if (res.leads.length) {
-      setLeads(res.leads);
-      setTab("leads");
-      toast.success(`${res.leads.length} leads generated`);
-    } else {
-      toast.success(res.message || "Request sent to automation");
+
+    setLoading(true);
+    const toastId = toast.loading("Finding businesses without a website…", {
+      description: `${config.businessType} · ${config.location}, ${config.country}. This can take 30–60 seconds.`,
+    });
+
+    let res: Awaited<ReturnType<typeof run>>;
+    try {
+      res = await run({
+        data: {
+          country: config.country,
+          location: config.location.trim(),
+          businessType: config.businessType,
+        },
+      });
+    } catch {
+      setLoading(false);
+      haptic.error();
+      toast.error("Couldn't reach the lead engine", {
+        id: toastId,
+        description: "Check your internet connection and try again.",
+      });
+      return;
     }
+    setLoading(false);
+
+    if (!res.ok || res.leads.length === 0) {
+      haptic.error();
+      toast.error("No leads generated", {
+        id: toastId,
+        description: res.message || "Try another city or business type.",
+      });
+      return;
+    }
+
+    haptic.success();
+    setLeads(res.leads);
+    setTab("leads");
+    toast.success(`${res.leads.length} leads found`, {
+      id: toastId,
+      description: `${config.businessType} in ${config.location} — all without a website.`,
+    });
     setRuns((r) =>
       [
         {
           id: `run-${Date.now()}`,
           at: new Date().toISOString(),
-          count: res.leads.length || config.leadCount,
-          country:
-            config.locationMode === "input" && config.city.trim()
-              ? `${config.city.trim()}, ${config.country}`
-              : config.country,
+          count: res.leads.length,
+          country: `${config.location}, ${config.country}`,
           businessType: config.businessType,
-          filter: config.websiteFilter === "no-website" ? "No Website" : "Old Website",
+          filter: "No Website",
         },
         ...r,
       ].slice(0, 30),
@@ -196,7 +220,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
     const q = query.trim().toLowerCase();
     if (!q) return leads;
     return leads.filter((l) =>
-      [l.businessName, l.ownerName, l.phone, l.email, l.social, l.website, l.category, l.country]
+      [l.businessName, l.phone, l.email, l.address, l.category, l.city, l.country]
         .join(" ")
         .toLowerCase()
         .includes(q),
@@ -208,17 +232,17 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
     haptic.tap();
     const cols = [
       "businessName",
-      "ownerName",
       "category",
       "phone",
       "email",
-      "website",
+      "address",
       "city",
-      "mapsLink",
-      "instagramLink",
-      "gap",
+      "country",
+      "rating",
+      "reviewsCount",
+      "googleMapsUrl",
     ] as const;
-    const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -237,7 +261,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           <span className="font-display text-lg font-extrabold tracking-tight">
             AirLeads <span className="text-primary">AI</span>
           </span>
-          <ThemeToggle />
+          <span className="rounded-full bg-primary/12 px-3 py-1.5 text-[11px] font-bold text-primary">
+            Automation live
+          </span>
         </div>
       </header>
 
@@ -415,9 +441,10 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           <>
             <h1 className="text-[24px] font-extrabold">Settings</h1>
             <div className="card-soft divide-y divide-border">
-              <Row label="Appearance" value={theme === "dark" ? "Dark" : "Light"} />
+              <Row label="Appearance" value="Light" />
               <Row label="Default country" value={config.country} />
-              <Row label="Leads per run" value={String(config.leadCount)} />
+              <Row label="Location" value={config.location || "Not set"} />
+              <Row label="Leads per run" value="All leads found" />
               <Row label="Automation" value="Connected" />
               <div className="flex items-center justify-between px-4 py-4">
                 <span className="flex items-center gap-2 text-sm font-semibold">
