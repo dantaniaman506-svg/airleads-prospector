@@ -1,0 +1,123 @@
+import { createServerFn } from "@tanstack/react-start";
+
+export type GenerateInput = {
+  country: string;
+  location: string;
+  businessType: string;
+};
+
+export type Lead = {
+  id: string;
+  businessName: string;
+  phone: string;
+  address: string;
+  website: string;
+  email: string;
+  rating: number | null;
+  reviewsCount: number | null;
+  category: string;
+  city: string;
+  country: string;
+  hasWebsite: boolean;
+  googleMapsUrl: string;
+  socialMedia: string;
+};
+
+export const signIn = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => data)
+  .handler(async ({ data }) => {
+    const { AUTH_EMAIL, AUTH_PASSWORD } = await import("./airleads.server");
+    const ok =
+      typeof data?.email === "string" &&
+      typeof data?.password === "string" &&
+      data.email.trim().toLowerCase() === AUTH_EMAIL &&
+      data.password === AUTH_PASSWORD;
+    return { ok };
+  });
+
+export const generateLeads = createServerFn({ method: "POST" })
+  .inputValidator((data: GenerateInput) => data)
+  .handler(async ({ data }) => {
+    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage } =
+      await import("./airleads.server");
+
+    // Exact contract with the n8n webhook: raw JSON, three root-level keys.
+    const body = {
+      country: (data.country ?? "").trim(),
+      location: (data.location ?? "").trim(),
+      businessType: (data.businessType ?? "").trim(),
+    };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120_000);
+
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      const text = await res.text();
+
+      if (!res.ok) {
+        return {
+          ok: false as const,
+          leads: [] as Lead[],
+          message:
+            res.status === 404
+              ? "Automation webhook not found (404). In n8n, activate the workflow so the production webhook is live."
+              : `Lead engine returned an error (${res.status}). Please try again in a moment.`,
+        };
+      }
+
+      let payload: unknown = null;
+      try {
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        payload = null;
+      }
+
+      if (payload === null) {
+        return {
+          ok: false as const,
+          leads: [] as Lead[],
+          message:
+            "The automation replied with no data. In n8n set the Webhook node to respond with the last node's JSON.",
+        };
+      }
+
+      if (!isSuccess(payload)) {
+        return {
+          ok: false as const,
+          leads: [] as Lead[],
+          message: backendMessage(payload) || "The automation could not complete this search.",
+        };
+      }
+
+      const leads = normalizeLeads(payload);
+      if (leads.length === 0) {
+        return {
+          ok: false as const,
+          leads: [] as Lead[],
+          message:
+            backendMessage(payload) ||
+            "No leads found for this combination. Try another city or business type.",
+        };
+      }
+
+      return { ok: true as const, leads, message: "" };
+    } catch (error) {
+      const aborted = error instanceof Error && error.name === "AbortError";
+      return {
+        ok: false as const,
+        leads: [] as Lead[],
+        message: aborted
+          ? "This search took too long (over 2 minutes) and was stopped. Try a specific city or a narrower business type."
+          : "Couldn't reach the lead engine. Check your connection and try again.",
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  });
