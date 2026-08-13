@@ -2,28 +2,25 @@ import { createServerFn } from "@tanstack/react-start";
 
 export type GenerateInput = {
   country: string;
+  location: string;
   businessType: string;
-  locationMode: "random" | "input";
-  city: string;
-  leadCount: number;
-  websiteFilter: "no-website" | "old-website";
-  fields: string[];
 };
 
 export type Lead = {
   id: string;
   businessName: string;
-  ownerName: string;
   phone: string;
-  email: string;
-  social: string;
+  address: string;
   website: string;
-  country: string;
+  email: string;
+  rating: number | null;
+  reviewsCount: number | null;
   category: string;
   city: string;
-  mapsLink: string;
-  instagramLink: string;
-  gap: string;
+  country: string;
+  hasWebsite: boolean;
+  googleMapsUrl: string;
+  socialMedia: string;
 };
 
 export const signIn = createServerFn({ method: "POST" })
@@ -41,14 +38,15 @@ export const signIn = createServerFn({ method: "POST" })
 export const generateLeads = createServerFn({ method: "POST" })
   .inputValidator((data: GenerateInput) => data)
   .handler(async ({ data }) => {
-    const { WEBHOOK_URL, normalizeLeads, isSuccess } = await import("./airleads.server");
+    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage } = await import(
+      "./airleads.server"
+    );
 
+    // Exact contract with the n8n webhook: raw JSON, three root-level keys.
     const body = {
-      client_email: "demo@client.com",
-      country: (data.country || "India").trim(),
-      location_mode: data.locationMode === "input" ? "input" : "random",
-      city: data.locationMode === "input" ? (data.city ?? "").trim() : "",
-      business_type: (data.businessType ?? "").trim(),
+      country: (data.country ?? "").trim(),
+      location: (data.location ?? "").trim(),
+      businessType: (data.businessType ?? "").trim(),
     };
 
     const controller = new AbortController();
@@ -63,11 +61,15 @@ export const generateLeads = createServerFn({ method: "POST" })
       });
 
       const text = await res.text();
+
       if (!res.ok) {
         return {
           ok: false as const,
           leads: [] as Lead[],
-          message: "Lead engine is busy right now. Please try again in a moment.",
+          message:
+            res.status === 404
+              ? "Automation webhook not found (404). In n8n, activate the workflow so the production webhook is live."
+              : `Lead engine returned an error (${res.status}). Please try again in a moment.`,
         };
       }
 
@@ -78,20 +80,31 @@ export const generateLeads = createServerFn({ method: "POST" })
         payload = null;
       }
 
-      const leads = normalizeLeads(payload);
       if (payload === null) {
         return {
           ok: false as const,
           leads: [] as Lead[],
           message:
-            "Request sent to the automation, but it returned no data. In n8n set the Webhook node to respond with the last node's JSON.",
+            "The automation replied with no data. In n8n set the Webhook node to respond with the last node's JSON.",
         };
       }
-      if (!isSuccess(payload) || leads.length === 0) {
+
+      if (!isSuccess(payload)) {
         return {
           ok: false as const,
           leads: [] as Lead[],
-          message: "No leads found, try another city or business type.",
+          message: backendMessage(payload) || "The automation could not complete this search.",
+        };
+      }
+
+      const leads = normalizeLeads(payload);
+      if (leads.length === 0) {
+        return {
+          ok: false as const,
+          leads: [] as Lead[],
+          message:
+            backendMessage(payload) ||
+            "No leads found for this combination. Try another city or business type.",
         };
       }
 
@@ -102,7 +115,7 @@ export const generateLeads = createServerFn({ method: "POST" })
         ok: false as const,
         leads: [] as Lead[],
         message: aborted
-          ? "This search took too long. Try a specific city or a narrower business type."
+          ? "This search took too long (over 2 minutes) and was stopped. Try a specific city or a narrower business type."
           : "Couldn't reach the lead engine. Check your connection and try again.",
       };
     } finally {
