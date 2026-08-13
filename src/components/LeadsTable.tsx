@@ -38,13 +38,20 @@ export function LeadsTable({ leads, statuses, onStatusChange }: Props) {
             <tr>
               <th className="px-3 py-3 font-bold text-muted-foreground">#</th>
               {COLS.map((c) => (
-                <th key={c.key} className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">
+                <th
+                  key={c.key}
+                  className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground"
+                >
                   {c.label}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Rating</th>
+              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">
+                Rating
+              </th>
               <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Maps</th>
-              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">Status</th>
+              <th className="whitespace-nowrap px-3 py-3 font-bold text-muted-foreground">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +117,9 @@ export function LeadsTable({ leads, statuses, onStatusChange }: Props) {
                         onStatusChange(lead.id, status === "closed" ? "open" : "closed");
                       }}
                       className={`press whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                        status === "closed" ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
+                        status === "closed"
+                          ? "bg-primary/15 text-primary"
+                          : "bg-secondary text-muted-foreground"
                       }`}
                     >
                       {status === "closed" ? "Closed" : "Open"}

@@ -15,7 +15,10 @@ export function Sparkline({ data, className }: Props) {
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
 
-  const id = `spark-${series.join("-").slice(0, 16).replace(/[^a-z0-9]/gi, "")}`;
+  const id = `spark-${series
+    .join("-")
+    .slice(0, 16)
+    .replace(/[^a-z0-9]/gi, "")}`;
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className} aria-hidden>

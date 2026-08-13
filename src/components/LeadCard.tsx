@@ -47,7 +47,8 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
     },
     {
       Icon: MapPin,
-      value: lead.address || [lead.city, lead.country].filter(Boolean).join(", ") || "Not available",
+      value:
+        lead.address || [lead.city, lead.country].filter(Boolean).join(", ") || "Not available",
       label: "Address",
     },
     {
@@ -98,7 +99,11 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
           }}
           className="press text-muted-foreground"
         >
-          {saved ? <BookmarkCheck className="size-5 text-primary" /> : <Bookmark className="size-5" />}
+          {saved ? (
+            <BookmarkCheck className="size-5 text-primary" />
+          ) : (
+            <Bookmark className="size-5" />
+          )}
         </button>
       </div>
 
@@ -121,10 +126,16 @@ export function LeadCard({ lead, status, saved, onStatusChange, onToggleSave }: 
 
       <div className="mt-3 space-y-2 pl-2">
         {rows.map(({ Icon, value, label, href }) => (
-          <div key={label} className="flex items-center gap-3 rounded-xl bg-secondary/60 px-3 py-2.5">
+          <div
+            key={label}
+            className="flex items-center gap-3 rounded-xl bg-secondary/60 px-3 py-2.5"
+          >
             <Icon className="size-4 shrink-0 text-primary" />
             {href ? (
-              <a href={href} className="truncate text-[13px] font-medium underline-offset-4 hover:underline">
+              <a
+                href={href}
+                className="truncate text-[13px] font-medium underline-offset-4 hover:underline"
+              >
                 {value}
               </a>
             ) : (

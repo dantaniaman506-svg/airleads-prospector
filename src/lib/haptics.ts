@@ -15,7 +15,9 @@ export function setHapticsEnabled(on: boolean) {
 function tick(freq: number, gain: number) {
   if (typeof window === "undefined" || !hapticsEnabled()) return;
   try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return;
     audioCtx = audioCtx ?? new Ctx();
     if (audioCtx.state === "suspended") void audioCtx.resume();

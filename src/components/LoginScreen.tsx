@@ -115,7 +115,13 @@ export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
               }`}
             >
               {remember && (
-                <svg viewBox="0 0 24 24" className="size-3.5 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="3.5">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="size-3.5 text-primary-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                >
                   <path d="M4 12.5 9.5 18 20 6.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
@@ -125,7 +131,11 @@ export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
 
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
-          <button type="submit" disabled={loading} className="btn-glow flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[15px] font-bold">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-glow flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[15px] font-bold"
+          >
             {loading ? <Loader2 className="size-5 animate-spin" /> : null}
             {loading ? "Signing in" : "Login"}
             {!loading && <ArrowRight className="size-5" />}

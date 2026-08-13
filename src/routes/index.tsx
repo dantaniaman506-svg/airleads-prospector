@@ -91,7 +91,12 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
     try {
       const raw = window.localStorage.getItem("airleads-state");
       if (raw) {
-        const s = JSON.parse(raw) as { leads?: Lead[]; statuses?: Record<string, LeadStatus>; savedIds?: string[]; runs?: Run[] };
+        const s = JSON.parse(raw) as {
+          leads?: Lead[];
+          statuses?: Record<string, LeadStatus>;
+          savedIds?: string[];
+          runs?: Run[];
+        };
         setLeads(s.leads ?? []);
         setStatuses(s.statuses ?? {});
         setSavedIds(s.savedIds ?? []);
@@ -103,7 +108,10 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("airleads-state", JSON.stringify({ leads, statuses, savedIds, runs }));
+    window.localStorage.setItem(
+      "airleads-state",
+      JSON.stringify({ leads, statuses, savedIds, runs }),
+    );
   }, [leads, statuses, savedIds, runs]);
 
   const stats = useMemo(() => {
@@ -243,7 +251,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       "googleMapsUrl",
     ] as const;
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+    const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join(
+      "\n",
+    );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -292,7 +302,12 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               ))}
             </div>
 
-            <GeneratePanel config={config} setConfig={setConfig} onGenerate={handleGenerate} loading={loading} />
+            <GeneratePanel
+              config={config}
+              setConfig={setConfig}
+              onGenerate={handleGenerate}
+              loading={loading}
+            />
           </>
         )}
 
@@ -301,7 +316,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
             <div className="flex items-end justify-between">
               <div>
                 <h1 className="text-[24px] font-extrabold">Your Leads</h1>
-    <p className="text-sm text-muted-foreground">{visibleLeads.length} of {leads.length} businesses</p>
+                <p className="text-sm text-muted-foreground">
+                  {visibleLeads.length} of {leads.length} businesses
+                </p>
               </div>
               {leads.length > 0 && (
                 <div className="flex items-center gap-2">
@@ -322,7 +339,11 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                     }}
                     className="press rounded-full bg-secondary p-2.5 text-muted-foreground"
                   >
-                    {view === "table" ? <LayoutGrid className="size-4" /> : <Table2 className="size-4" />}
+                    {view === "table" ? (
+                      <LayoutGrid className="size-4" />
+                    ) : (
+                      <Table2 className="size-4" />
+                    )}
                   </button>
                   <button
                     type="button"
@@ -375,7 +396,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                     onStatusChange={(s) => setStatuses((prev) => ({ ...prev, [lead.id]: s }))}
                     onToggleSave={() =>
                       setSavedIds((prev) =>
-                        prev.includes(lead.id) ? prev.filter((i) => i !== lead.id) : [...prev, lead.id],
+                        prev.includes(lead.id)
+                          ? prev.filter((i) => i !== lead.id)
+                          : [...prev, lead.id],
                       )
                     }
                   />
@@ -389,7 +412,10 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           <>
             <h1 className="text-[24px] font-extrabold">History</h1>
             {runs.length === 0 ? (
-              <EmptyState title="No runs yet" text="Every generation you make will be logged here." />
+              <EmptyState
+                title="No runs yet"
+                text="Every generation you make will be logged here."
+              />
             ) : (
               <div className="space-y-3">
                 {runs.map((r) => (
@@ -419,7 +445,10 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
           <>
             <h1 className="text-[24px] font-extrabold">Saved</h1>
             {savedLeads.length === 0 ? (
-              <EmptyState title="Nothing saved" text="Tap the bookmark on any lead to keep it here." />
+              <EmptyState
+                title="Nothing saved"
+                text="Tap the bookmark on any lead to keep it here."
+              />
             ) : (
               <div className="space-y-3">
                 {savedLeads.map((lead) => (

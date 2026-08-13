@@ -38,9 +38,8 @@ export const signIn = createServerFn({ method: "POST" })
 export const generateLeads = createServerFn({ method: "POST" })
   .inputValidator((data: GenerateInput) => data)
   .handler(async ({ data }) => {
-    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage } = await import(
-      "./airleads.server"
-    );
+    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage } =
+      await import("./airleads.server");
 
     // Exact contract with the n8n webhook: raw JSON, three root-level keys.
     const body = {

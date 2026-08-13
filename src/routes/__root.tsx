@@ -80,10 +80,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "AirLeads AI — Lead Generation Automation" },
-      { name: "description", content: "Generate verified business leads that have no website or an outdated one, with owner name, phone, email and socials." },
+      {
+        name: "description",
+        content:
+          "Generate verified business leads that have no website or an outdated one, with owner name, phone, email and socials.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "AirLeads AI — Lead Generation Automation" },
-      { property: "og:description", content: "Find businesses that still need a website and get their contact details in seconds." },
+      {
+        property: "og:description",
+        content:
+          "Find businesses that still need a website and get their contact details in seconds.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
