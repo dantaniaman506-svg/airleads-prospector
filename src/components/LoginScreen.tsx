@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { signIn } from "@/lib/airleads.functions";
 import { haptic } from "@/lib/haptics";
 import { TechBackground } from "@/components/TechBackground";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
   const login = useServerFn(signIn);
@@ -41,7 +40,9 @@ export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
         <span className="font-display text-lg font-extrabold tracking-tight">
           AirLeads <span className="text-primary">AI</span>
         </span>
-        <ThemeToggle />
+        <span className="rounded-full bg-primary/12 px-3 py-1.5 text-[11px] font-bold text-primary">
+          AI Lead Engine
+        </span>
       </header>
 
       <div className="relative mx-auto mt-14 w-full max-w-md">
