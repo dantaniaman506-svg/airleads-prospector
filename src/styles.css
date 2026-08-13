@@ -19,6 +19,10 @@
  */
 
 @theme inline {
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --shadow-card: var(--shadow-card);
+  --shadow-glow: var(--shadow-glow);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -156,6 +160,19 @@
 
   body {
     background-color: var(--color-background);
+    background-image: var(--gradient-surface);
     color: var(--color-foreground);
+    font-family: var(--font-body);
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility bg-hero-gradient {
+  background-image: var(--gradient-hero);
 }
