@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Ban,
   MapPin,
+  Search,
 } from "lucide-react";
 import { BUSINESS_TYPES, COUNTRIES, LOCATIONS } from "@/lib/countries";
 import { haptic } from "@/lib/haptics";
@@ -40,9 +41,12 @@ export function GeneratePanel({
   const [countryOpen, setCountryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
 
   const country = COUNTRIES.find((c) => c.name === config.country) ?? COUNTRIES[0]!;
   const locations = LOCATIONS[country.code] ?? [];
+  const q = locationQuery.trim().toLowerCase();
+  const filtered = q ? locations.filter((l) => l.toLowerCase().includes(q)) : locations;
 
   const closeAll = () => {
     setCountryOpen(false);
@@ -153,36 +157,59 @@ export function GeneratePanel({
           />
         </button>
         {locationOpen && (
-          <div className="max-h-72 space-y-1 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-soft)]">
-            {locations.map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => {
-                  haptic.select();
-                  setConfig({ ...config, location: l });
-                  setLocationOpen(false);
-                }}
-                className={`press flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[14px] font-medium ${
-                  l === config.location ? "bg-primary/12 text-primary" : "hover:bg-secondary"
-                }`}
-              >
-                <span className="flex-1">{l}</span>
-                {l === config.location && <Check className="size-4" />}
-              </button>
-            ))}
+          <div className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-2 rounded-lg bg-secondary/60 px-3 focus-within:ring-2 focus-within:ring-primary/40">
+              <Search className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                placeholder="Search or type any state / city"
+                aria-label="Search state or city"
+                className="w-full bg-transparent py-2.5 text-[14px] font-medium outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <div className="mt-1 max-h-64 space-y-1 overflow-y-auto">
+              {locationQuery.trim() &&
+                !filtered.some((l) => l.toLowerCase() === locationQuery.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic.select();
+                      setConfig({ ...config, location: locationQuery.trim() });
+                      setLocationQuery("");
+                      setLocationOpen(false);
+                    }}
+                    className="press flex w-full items-center gap-2 rounded-lg bg-primary/10 px-3 py-3 text-left text-[14px] font-semibold text-primary"
+                  >
+                    <MapPin className="size-4" /> Use &ldquo;{locationQuery.trim()}&rdquo;
+                  </button>
+                )}
+              {filtered.map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => {
+                    haptic.select();
+                    setConfig({ ...config, location: l });
+                    setLocationQuery("");
+                    setLocationOpen(false);
+                  }}
+                  className={`press flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[14px] font-medium ${
+                    l === config.location ? "bg-primary/12 text-primary" : "hover:bg-secondary"
+                  }`}
+                >
+                  <span className="flex-1">{l}</span>
+                  {l === config.location && <Check className="size-4" />}
+                </button>
+              ))}
+              {filtered.length === 0 && !locationQuery.trim() && (
+                <p className="px-3 py-3 text-[13px] text-muted-foreground">
+                  Type a state or city name above.
+                </p>
+              )}
+            </div>
           </div>
         )}
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 px-4 focus-within:border-primary">
-          <MapPin className="size-4 shrink-0 text-muted-foreground" />
-          <input
-            value={config.location}
-            onChange={(e) => setConfig({ ...config, location: e.target.value })}
-            placeholder="Or type any state / city"
-            aria-label="State or city"
-            className="w-full bg-transparent py-3 text-[14px] font-semibold outline-none placeholder:font-medium placeholder:text-muted-foreground"
-          />
-        </div>
       </div>
 
       {/* Business type */}
