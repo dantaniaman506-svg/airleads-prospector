@@ -38,7 +38,7 @@ export const signIn = createServerFn({ method: "POST" })
 export const generateLeads = createServerFn({ method: "POST" })
   .inputValidator((data: GenerateInput) => data)
   .handler(async ({ data }) => {
-    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage } =
+    const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage, parseWebhookPayload } =
       await import("./airleads.server");
 
     // Exact contract with the n8n webhook: raw JSON, three root-level keys.
@@ -49,17 +49,24 @@ export const generateLeads = createServerFn({ method: "POST" })
     };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120_000);
+    const timer = setTimeout(() => controller.abort(), 180_000);
+    const startedAt = Date.now();
 
     try {
       const res = await fetch(WEBHOOK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(body),
         signal: controller.signal,
       });
 
       const text = await res.text();
+      console.info("AirLeads webhook response", {
+        status: res.status,
+        elapsedMs: Date.now() - startedAt,
+        responseBytes: text.length,
+        contentType: res.headers.get("content-type"),
+      });
 
       if (!res.ok) {
         return {
@@ -72,19 +79,14 @@ export const generateLeads = createServerFn({ method: "POST" })
         };
       }
 
-      let payload: unknown = null;
-      try {
-        payload = text ? JSON.parse(text) : null;
-      } catch {
-        payload = null;
-      }
+      const payload = parseWebhookPayload(text);
 
       if (payload === null) {
         return {
           ok: false as const,
           leads: [] as Lead[],
           message:
-            "The automation replied with no data. In n8n set the Webhook node to respond with the last node's JSON.",
+            "n8n returned HTTP 200 with an empty body. The production workflow is responding before the scraper reaches ‘Send Leads to Frontend’.",
         };
       }
 
@@ -114,7 +116,7 @@ export const generateLeads = createServerFn({ method: "POST" })
         ok: false as const,
         leads: [] as Lead[],
         message: aborted
-          ? "This search took too long (over 2 minutes) and was stopped. Try a specific city or a narrower business type."
+          ? "This search took too long (over 3 minutes) and was stopped. Try a specific city or a narrower business type."
           : "Couldn't reach the lead engine. Check your connection and try again.",
       };
     } finally {

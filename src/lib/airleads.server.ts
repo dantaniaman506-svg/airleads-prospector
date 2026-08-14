@@ -55,6 +55,26 @@ export function backendMessage(payload: unknown): string {
   return msg;
 }
 
+export function parseWebhookPayload(text: string): unknown {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (typeof parsed !== "string") return parsed;
+
+    const nested = parsed.trim();
+    if (!nested) return null;
+    try {
+      return JSON.parse(nested) as unknown;
+    } catch {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+}
+
 function looksLikeLead(row: unknown): boolean {
   if (!row || typeof row !== "object") return false;
   const keys = Object.keys(row as object).map((k) => k.toLowerCase().replace(/[^a-z]/g, ""));
