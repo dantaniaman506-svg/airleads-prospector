@@ -1,14 +1,32 @@
-import { useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-/**
- * The app ships a single light theme. This provider only makes sure the
- * `dark` class is never applied, even for visitors with an older stored value.
- */
+type Theme = "light" | "dark";
+
+const KEY = "airleads-theme";
+
+const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void }>({
+  theme: "light",
+  setTheme: () => {},
+});
+
+export function useTheme() {
+  return useContext(ThemeContext);
+}
+
+/** Light is the default. The choice is remembered per device. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<Theme>("light");
+
   useEffect(() => {
-    document.documentElement.classList.remove("dark");
-    window.localStorage.removeItem("airleads-theme");
+    const stored = window.localStorage.getItem(KEY);
+    if (stored === "dark" || stored === "light") setTheme(stored);
   }, []);
 
-  return <>{children}</>;
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(KEY, theme);
+  }, [theme]);
+
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
 }

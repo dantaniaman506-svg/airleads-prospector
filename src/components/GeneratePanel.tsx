@@ -11,17 +11,23 @@ import {
   Ban,
   MapPin,
   Search,
+  LocateFixed,
+  Shuffle,
 } from "lucide-react";
 import { BUSINESS_TYPES, COUNTRIES, LOCATIONS } from "@/lib/countries";
 import { haptic } from "@/lib/haptics";
 
+export type LocationMode = "specific" | "random";
+
 export type GenerateConfig = {
+  mode: LocationMode;
   country: string;
   location: string;
   businessType: string;
 };
 
 export const DEFAULT_CONFIG: GenerateConfig = {
+  mode: "specific",
   country: "India",
   location: LOCATIONS["IN"]![0]!,
   businessType: BUSINESS_TYPES[0]!,
@@ -131,8 +137,68 @@ export function GeneratePanel({
         )}
       </div>
 
-      {/* Location */}
+      {/* Location mode */}
       <div className="mt-4 space-y-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Search Area
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
+          {(
+            [
+              {
+                id: "specific" as const,
+                label: "Specific City",
+                hint: "Pick a state or city",
+                Icon: LocateFixed,
+              },
+              {
+                id: "random" as const,
+                label: "Random Cities",
+                hint: "Surprise me nationwide",
+                Icon: Shuffle,
+              },
+            ]
+          ).map(({ id, label, hint, Icon }) => {
+            const on = config.mode === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => {
+                  haptic.select();
+                  closeAll();
+                  setConfig({ ...config, mode: id });
+                }}
+                className={`press relative overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-300 ${
+                  on
+                    ? "border-primary/50 bg-primary/10 ring-1 ring-primary/25"
+                    : "border-border bg-secondary/50 hover:bg-secondary"
+                }`}
+              >
+                <span
+                  className={`grid size-8 place-items-center rounded-lg transition-colors ${
+                    on ? "bg-primary/18 text-primary" : "bg-background text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span className="mt-2.5 block text-[13.5px] font-bold">{label}</span>
+                <span className="block text-[11px] text-muted-foreground">{hint}</span>
+                {on && <Check className="absolute right-3 top-3 size-4 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+        {config.mode === "random" && (
+          <p className="text-[12px] leading-snug text-muted-foreground">
+            We&apos;ll pull leads from different cities across the country each time you generate.
+          </p>
+        )}
+      </div>
+
+      {/* Location */}
+      <div className={`mt-4 space-y-2 ${config.mode === "random" ? "hidden" : ""}`}>
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           State / City
         </p>
