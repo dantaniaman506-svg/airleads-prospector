@@ -47,7 +47,9 @@ export async function payForPlan(
   planId: PlanId,
   hooks: { onVerifying: () => void; onDismiss: () => void },
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  if (!CREATE_ORDER_URL || !VERIFY_PAYMENT_URL) {
+  const createUrl = CREATE_ORDER_URL;
+  const verifyUrl = VERIFY_PAYMENT_URL;
+  if (!createUrl || !verifyUrl) {
     return {
       ok: false,
       message:
@@ -57,7 +59,7 @@ export async function payForPlan(
 
   let order: { orderId?: string; amount?: number; currency?: string; keyId?: string };
   try {
-    const res = await fetch(CREATE_ORDER_URL, {
+    const res = await fetch(createUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId }),
@@ -100,7 +102,7 @@ export async function payForPlan(
         hooks.onVerifying();
         void (async () => {
           try {
-            const res = await fetch(VERIFY_PAYMENT_URL, {
+            const res = await fetch(verifyUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ ...r, planId }),
