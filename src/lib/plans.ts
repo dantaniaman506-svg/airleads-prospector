@@ -53,6 +53,3 @@ export function getPlan(id: PlanId | null): Plan | null {
   return PLANS.find((p) => p.id === id) ?? null;
 }
 
-export const RAZORPAY_KEY_ID = import.meta.env["VITE_RAZORPAY_KEY_ID"] as string | undefined;
-export const CREATE_ORDER_URL = import.meta.env["VITE_CREATE_ORDER_URL"] as string | undefined;
-export const VERIFY_PAYMENT_URL = import.meta.env["VITE_VERIFY_PAYMENT_URL"] as string | undefined;
