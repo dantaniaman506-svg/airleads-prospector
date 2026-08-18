@@ -1,7 +1,7 @@
 import { Home, Search, History, Bookmark, Settings } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 
-export type TabId = "dashboard" | "leads" | "history" | "saved" | "settings";
+export type TabId = "dashboard" | "leads" | "history" | "saved" | "settings" | "plans";
 
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "dashboard", label: "Dashboard", Icon: Home },
