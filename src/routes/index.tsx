@@ -76,6 +76,8 @@ function App() {
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const run = useServerFn(generateLeads);
+  const billing = useBilling();
+  const { theme } = useTheme();
   const [tab, setTab] = useState<TabId>("dashboard");
   const [config, setConfig] = useState<GenerateConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
