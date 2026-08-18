@@ -1,4 +1,5 @@
-import { CREATE_ORDER_URL, RAZORPAY_KEY_ID, VERIFY_PAYMENT_URL, type PlanId } from "./plans";
+import { createRazorpayOrder, verifyRazorpayPayment } from "./payments.functions";
+import type { PlanId } from "./plans";
 
 type RazorpayResponse = {
   razorpay_payment_id: string;
@@ -40,40 +41,20 @@ function loadScript(): Promise<RazorpayCtor> {
 }
 
 /**
- * Full subscription purchase. Only the publishable Key ID is used here — the
- * Key Secret lives exclusively in the n8n backend.
+ * Full subscription purchase. Order creation, amount and signature verification
+ * all happen server-side — the browser only ever sees the publishable Key ID.
  */
 export async function payForPlan(
   planId: PlanId,
   hooks: { onVerifying: () => void; onDismiss: () => void },
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const createUrl = CREATE_ORDER_URL;
-  const verifyUrl = VERIFY_PAYMENT_URL;
-  if (!createUrl || !verifyUrl) {
-    return {
-      ok: false,
-      message:
-        "Payment endpoints are not configured yet. Add VITE_CREATE_ORDER_URL and VITE_VERIFY_PAYMENT_URL.",
-    };
-  }
-
-  let order: { orderId?: string; amount?: number; currency?: string; keyId?: string };
+  let order: Awaited<ReturnType<typeof createRazorpayOrder>>;
   try {
-    const res = await fetch(createUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId }),
-    });
-    if (!res.ok) throw new Error(String(res.status));
-    order = (await res.json()) as typeof order;
+    order = await createRazorpayOrder({ data: { planId } });
   } catch {
     return { ok: false, message: "Couldn't start the payment. Please try again." };
   }
-
-  const keyId = order.keyId || RAZORPAY_KEY_ID;
-  if (!order.orderId || !keyId) {
-    return { ok: false, message: "Payment could not be initialised (missing order or key)." };
-  }
+  if (!order.ok) return { ok: false, message: order.message };
 
   let Razorpay: RazorpayCtor;
   try {
@@ -84,12 +65,12 @@ export async function payForPlan(
 
   return new Promise((resolve) => {
     const rzp = new Razorpay({
-      key: keyId,
-      order_id: order.orderId!,
-      ...(order.amount ? { amount: order.amount } : {}),
-      currency: order.currency ?? "INR",
+      key: order.keyId,
+      order_id: order.orderId,
+      amount: order.amount,
+      currency: order.currency,
       name: "AirLeads AI",
-      description: `${planId} plan subscription`,
+      description: `${order.planName} plan subscription`,
       theme: { color: "#f97316" },
       prefill: {},
       modal: {
@@ -102,20 +83,9 @@ export async function payForPlan(
         hooks.onVerifying();
         void (async () => {
           try {
-            const res = await fetch(verifyUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ...r, planId }),
-            });
-            const data = (await res.json().catch(() => ({}))) as {
-              success?: boolean;
-              message?: string;
-            };
-            if (!res.ok || data.success === false) {
-              resolve({
-                ok: false,
-                message: data.message || "We couldn't verify this payment. Please try again.",
-              });
+            const res = await verifyRazorpayPayment({ data: { planId, ...r } });
+            if (!res.ok) {
+              resolve({ ok: false, message: res.message });
               return;
             }
             resolve({ ok: true });
