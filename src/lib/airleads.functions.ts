@@ -121,7 +121,7 @@ export const generateLeads = createServerFn({ method: "POST" })
         };
       }
 
-      return { ok: true as const, leads, message: "" };
+      return { ok: true as const, leads, message: "", location };
     } catch (error) {
       const aborted = error instanceof Error && error.name === "AbortError";
       return {
