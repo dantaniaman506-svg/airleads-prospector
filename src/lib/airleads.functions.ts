@@ -4,6 +4,7 @@ export type GenerateInput = {
   country: string;
   location: string;
   businessType: string;
+  mode?: "specific" | "random";
 };
 
 export type Lead = {
