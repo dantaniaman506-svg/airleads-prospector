@@ -24,8 +24,12 @@ import { LoginScreen } from "@/components/LoginScreen";
 import { Sparkline } from "@/components/Sparkline";
 import { LeadsTable } from "@/components/LeadsTable";
 import { TechBackground } from "@/components/TechBackground";
+import { PlanStatusPill } from "@/components/PlanStatusPill";
+import { PlansScreen } from "@/components/PlansScreen";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { generateLeads, type Lead } from "@/lib/airleads.functions";
-import { BUSINESS_TYPES } from "@/lib/countries";
+import { useBilling } from "@/lib/billing";
+import { useTheme } from "@/lib/theme";
 import { haptic, hapticsEnabled, setHapticsEnabled } from "@/lib/haptics";
 
 export const Route = createFileRoute("/")({
