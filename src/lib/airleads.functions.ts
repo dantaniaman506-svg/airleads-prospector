@@ -4,6 +4,7 @@ export type GenerateInput = {
   country: string;
   location: string;
   businessType: string;
+  mode?: "specific" | "random";
 };
 
 export type Lead = {
@@ -40,12 +41,23 @@ export const generateLeads = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { WEBHOOK_URL, normalizeLeads, isSuccess, backendMessage, parseWebhookPayload } =
       await import("./airleads.server");
+    const { COUNTRIES, LOCATIONS } = await import("./countries");
+
+    const country = (data.country ?? "").trim();
+    let location = (data.location ?? "").trim();
+
+    // Random discovery mode: the server picks the city so the client can't inject anything odd.
+    if (data.mode === "random") {
+      const code = COUNTRIES.find((c) => c.name === country)?.code ?? "IN";
+      const cities = LOCATIONS[code] ?? [];
+      location = cities.length ? cities[Math.floor(Math.random() * cities.length)]! : location;
+    }
 
     // Exact contract with the n8n webhook: raw JSON, three root-level keys.
     const body = {
-      country: (data.country ?? "").trim(),
-      location: (data.location ?? "").trim(),
-      businessType: (data.businessType ?? "").trim(),
+      country,
+      location,
+      businessType: (data.businessType ?? "").trim().slice(0, 80),
     };
 
     const controller = new AbortController();
@@ -109,7 +121,7 @@ export const generateLeads = createServerFn({ method: "POST" })
         };
       }
 
-      return { ok: true as const, leads, message: "" };
+      return { ok: true as const, leads, message: "", location };
     } catch (error) {
       const aborted = error instanceof Error && error.name === "AbortError";
       return {

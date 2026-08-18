@@ -1,4 +1,5 @@
-export const WEBHOOK_URL = "https://lissa770.app.n8n.cloud/webhook/airleads-scrape";
+export const WEBHOOK_URL =
+  process.env["AIRLEADS_WEBHOOK_URL"] ?? "https://jixa.app.n8n.cloud/webhook/airleads-scrape";
 
 export const AUTH_EMAIL = (process.env["APP_LOGIN_EMAIL"] ?? "client@airleads.ai").toLowerCase();
 export const AUTH_PASSWORD = process.env["APP_LOGIN_PASSWORD"] ?? "AirLeads@2026";

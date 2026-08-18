@@ -24,8 +24,12 @@ import { LoginScreen } from "@/components/LoginScreen";
 import { Sparkline } from "@/components/Sparkline";
 import { LeadsTable } from "@/components/LeadsTable";
 import { TechBackground } from "@/components/TechBackground";
+import { PlanStatusPill } from "@/components/PlanStatusPill";
+import { PlansScreen } from "@/components/PlansScreen";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { generateLeads, type Lead } from "@/lib/airleads.functions";
-import { BUSINESS_TYPES } from "@/lib/countries";
+import { useBilling } from "@/lib/billing";
+import { useTheme } from "@/lib/theme";
 import { haptic, hapticsEnabled, setHapticsEnabled } from "@/lib/haptics";
 
 export const Route = createFileRoute("/")({
@@ -72,6 +76,8 @@ function App() {
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const run = useServerFn(generateLeads);
+  const billing = useBilling();
+  const { theme } = useTheme();
   const [tab, setTab] = useState<TabId>("dashboard");
   const [config, setConfig] = useState<GenerateConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -158,7 +164,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   }, [leads, runs, statuses]);
 
   async function handleGenerate() {
-    if (!config.location.trim()) {
+    const random = config.mode === "random";
+
+    if (!random && !config.location.trim()) {
       haptic.error();
       toast.error("Choose a state or city first", {
         description: "The automation needs a location to search in.",
@@ -166,9 +174,31 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       return;
     }
 
+    // ---- Credit checks (plan required, daily limit enforced) ----
+    if (!billing.plan) {
+      haptic.error();
+      toast.error("No active plan", {
+        description: "Subscribe to a plan to start generating leads.",
+        action: { label: "See plans", onClick: () => setTab("plans") },
+      });
+      setTab("plans");
+      return;
+    }
+    if (billing.remaining <= 0) {
+      haptic.error();
+      toast.error("Today's lead credits are used up", {
+        description: `Your ${billing.plan.name} plan gives ${billing.limit} leads a day. Credits reset at midnight.`,
+        action: { label: "Upgrade", onClick: () => setTab("plans") },
+      });
+      return;
+    }
+
+    const allowance = billing.remaining;
+    const area = random ? `random city in ${config.country}` : `${config.location}, ${config.country}`;
+
     setLoading(true);
     const toastId = toast.loading("Finding businesses without a website…", {
-      description: `${config.businessType} · ${config.location}, ${config.country}. This can take 30–60 seconds.`,
+      description: `${config.businessType} · ${area}. This can take 30–60 seconds.`,
     });
 
     let res: Awaited<ReturnType<typeof run>>;
@@ -176,8 +206,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       res = await run({
         data: {
           country: config.country,
-          location: config.location.trim(),
+          location: random ? "" : config.location.trim(),
           businessType: config.businessType,
+          mode: config.mode,
         },
       });
     } catch {
@@ -200,22 +231,30 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       return;
     }
 
+    // Never hand over more leads than the plan still allows today.
+    const delivered = res.leads.slice(0, allowance);
+    const trimmed = res.leads.length - delivered.length;
+    const where = res.ok && res.location ? res.location : config.location;
+
     haptic.success();
-    setLeads(res.leads);
+    setLeads(delivered);
+    billing.consumeCredit(delivered.length);
     setTab("leads");
-    toast.success(`${res.leads.length} leads found`, {
+    toast.success(`${delivered.length} leads found`, {
       id: toastId,
-      description: `${config.businessType} in ${config.location} — all without a website.`,
+      description: trimmed
+        ? `${config.businessType} in ${where} — ${trimmed} more were held back because today's credits ran out.`
+        : `${config.businessType} in ${where} — all without a website.`,
     });
     setRuns((r) =>
       [
         {
           id: `run-${Date.now()}`,
           at: new Date().toISOString(),
-          count: res.leads.length,
-          country: `${config.location}, ${config.country}`,
+          count: delivered.length,
+          country: `${where}, ${config.country}`,
           businessType: config.businessType,
-          filter: "No Website",
+          filter: random ? "Random · No Website" : "No Website",
         },
         ...r,
       ].slice(0, 30),
